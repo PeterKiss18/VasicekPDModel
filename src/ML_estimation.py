@@ -1,6 +1,9 @@
 import numpy as np
+import pandas as pd
 from scipy.stats import binom
 from scipy.integrate import quad
+from scipy.optimize import minimize
+from src.sucess_probability import p_g
 
 
 def calculate_my_likelihood(d_g, n_g, p_g, prob_dens_func, w_g, gamma_g):
@@ -46,3 +49,49 @@ def calculate_likelihood_ts(d_g, n_g, p_g, pdf_g, w_g, gamma_g):
     result, _ = quad(integrand, -5, 5)
 
     return result
+
+
+def maximum_likelihood_estimation(d_g, n_g, prob_dens_func, p_g, w_initial, gamma_initial, bounds):
+    """
+    Estimate w_g and gamma_g using the maximum likelihood estimation method.
+
+    Parameters:
+        d_g (pd.Series): Time series for d_g.
+        n_g (pd.Series): Time series for n_g.
+        prob_dens_func (callable): The pdf_g function representing the probability density function.
+        p_g (callable): The p_g function representing the probability density function.
+        w_initial (float): Initial guess for w_g.
+        gamma_initial (float): Initial guess for gamma_g.
+        bounds (list): Bounds for the minimization algorithm.
+
+    Returns:
+        tuple: Estimated w_g and gamma_g.
+    """
+
+    # Sum of d_g and n_g if they are pd.Series
+    if isinstance(d_g, pd.Series):
+        d_total_sum = d_g.sum()
+        n_total_sum = n_g.sum()
+    else:
+        d_total_sum = d_g
+        n_total_sum = n_g
+
+    # Function to be minimized in weight parameter
+    objective_function = lambda params: -calculate_my_likelihood(
+        d_total_sum,
+        n_total_sum,
+        p_g,
+        prob_dens_func,
+        params[0],
+        params[1],
+    )
+
+    initial_guess = [w_initial, gamma_initial]
+
+    # Minimization based on the objective function
+    result = minimize(objective_function, initial_guess, method='Nelder-Mead', bounds=bounds)
+
+    # The found value of w_g and gamma_g
+    w_g_found, gamma_g_found = result.x
+
+    return w_g_found, gamma_g_found
