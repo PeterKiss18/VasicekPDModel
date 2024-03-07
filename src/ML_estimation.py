@@ -3,7 +3,6 @@ import pandas as pd
 from scipy.stats import binom
 from scipy.integrate import quad
 from scipy.optimize import minimize
-from src.sucess_probability import p_g
 
 
 def calculate_my_likelihood(d_g, n_g, p_g, prob_dens_func, w_g, gamma_g):
