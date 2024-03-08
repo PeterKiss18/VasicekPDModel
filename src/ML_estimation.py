@@ -94,3 +94,40 @@ def maximum_likelihood_estimation(d_g, n_g, prob_dens_func, p_g, w_initial, gamm
     w_g_found, gamma_g_found = result.x
 
     return w_g_found, gamma_g_found
+
+
+def multivariate_ml_estimation(d_g, n_g, prob_dens_func, p_g, w_initial, gamma_initial, bounds):
+    """
+    Estimate w_g and gamma_g using the maximum likelihood estimation method.
+
+    Parameters:
+        d_g (pd.Series): Time series for d_g.
+        n_g (pd.Series): Time series for n_g.
+        prob_dens_func (callable): The pdf_g function representing the probability density function.
+        p_g (callable): The p_g function representing the probability density function.
+        w_initial (float): Initial guess for w_g.
+        gamma_initial (list): Initial guess for gamma_g list.
+        bounds (list): Bounds for the minimization algorithm.
+
+    Returns:
+        tuple: Estimated w_g and gamma_g.
+    """
+
+    num_of_grades = len(d_g)
+
+    # Function to be minimized in weight parameter
+    objective_function = lambda params: -calculate_likelihood_ts(
+        d_g,
+        n_g,
+        p_g,
+        prob_dens_func,
+        float(params[0]) * num_of_grades,
+        list(params[1:]),
+    )
+
+    initial_guess = [w_initial] + gamma_initial
+
+    # Minimization based on the objective function
+    result = minimize(objective_function, initial_guess, method='Nelder-Mead', bounds=bounds)
+
+    return result.x
