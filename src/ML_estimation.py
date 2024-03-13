@@ -50,6 +50,29 @@ def calculate_likelihood_ts(d_g, n_g, p_g, pdf_g, w_g, gamma_g):
     return result
 
 
+def calculate_my_likelihood_arr(d_g_arr, n_g_arr, p_g, prob_dens_func, w_g_arr, gamma_g_arr):
+    """
+    Numerically calculates the value of L(d_g_arr) for multiple grades based on the given formula.
+
+    Parameters:
+        d_g_arr (numpy.array(int)): Values of d_g's by grades
+        n_g_arr (numpy.array(int)): Values of n_g's by grades
+        p_g (callable): The p_g function representing the probability density function.
+        prob_dens_func (callable): The pdf_g function representing the probability density function.
+        w_g_arr (numpy.array(float)): Parameter 'w_g's by grades
+        gamma_g_arr (numpy.array(float)): Parameter 'gamma_g's by grades.
+
+    Returns:
+        float: Numerical approximation of the integral.
+    """
+
+    integrand = lambda x: np.prod(binom.pmf(d_g_arr, n_g_arr, p_g(x, w_g_arr, gamma_g_arr))) * prob_dens_func(x)
+
+    result, _ = quad(integrand, -3, 3)
+
+    return result
+
+
 def maximum_likelihood_estimation(d_g, n_g, prob_dens_func, p_g, w_initial, gamma_initial, bounds):
     """
     Estimate w_g and gamma_g using the maximum likelihood estimation method.
