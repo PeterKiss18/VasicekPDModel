@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import binom
+from scipy.stats import binom, norm
 from scipy.integrate import quad
 from scipy.optimize import minimize
 
@@ -23,7 +23,7 @@ def calculate_my_likelihood(d_g, n_g, p_g, prob_dens_func, w_g, gamma_g):
 
     integrand = lambda x: binom.pmf(d_g, n_g, p_g(x, w_g, gamma_g)) * prob_dens_func(x)
 
-    result, _ = quad(integrand, -5, 5)
+    result, _ = quad(integrand, -3, 3)
 
     return result
 
@@ -154,3 +154,20 @@ def multivariate_ml_estimation(d_g, n_g, prob_dens_func, p_g, w_initial, gamma_i
     result = minimize(objective_function, initial_guess, method='Nelder-Mead', bounds=bounds)
 
     return result.x
+
+
+def ml_parameter_estimation(d_g, n_g, p_g, w_initial, gamma_initial, bounds):
+    initial_guess = np.array([w_initial, gamma_initial])
+
+    gamma_dim = len(gamma_initial)
+
+    objective_function = lambda params: -np.log(calculate_my_likelihood_arr(
+        d_g, n_g, p_g, norm.pdf, params[gamma_dim:], params[0:gamma_dim]))
+
+    result = minimize(objective_function,
+                      initial_guess,
+                      method="Nelder-Mead",
+                      bounds=bounds,
+                      options={
+                          'disp': True})
+    return result

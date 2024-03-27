@@ -14,7 +14,7 @@ def generate_default(num_of_obligors, factor_loading, gamma):
     return default
 
 
-def generate_default_buckets(factor_loading_list, num_of_obligors_list, gamma_list, time_points = 160):
+def generate_default_buckets(factor_loading_list, num_of_obligors_list, gamma_list, time_points=160):
     x = np.random.normal(0, 1, time_points)
     defaults_list = []
 

@@ -27,7 +27,7 @@ def expected_value_of_function_monte_carlo(f, num_samples=100000):
 
 def likelihood_mc(w_g, gamma_g, d_g, n_g, p_g, num_of_simulations):
     # likelihood function
-    likelihood_function = lambda x: np.prod([stats.binom.pmf(d, n, p_g(x, w_g=w_g, gamma_g=gamma_g)) for d, n in zip(d_g, n_g)], axis=0)
+    likelihood_function = lambda x: np.prod([stats.binom.pmf(d, n, p_g(x, w_g=w_g, gamma_g=gamma)) for d, n, gamma in zip(d_g, n_g, gamma_g)], axis=0)
 
     return expected_value_of_function_monte_carlo(likelihood_function, num_of_simulations)
 
@@ -59,4 +59,4 @@ def monte_carlo_MLE(d_g, n_g, p_g, w_initial, gamma_initial, bounds, num_of_simu
     result = minimize(objective_function, initial_guess, method='Nelder-Mead', bounds=bounds)
 
     # The found value of w_g and gamma_g
-    return result.x
+    return result
