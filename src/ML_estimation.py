@@ -3,6 +3,8 @@ import pandas as pd
 from scipy.stats import binom, norm
 from scipy.integrate import quad
 from scipy.optimize import minimize
+from src.data_generator import generate_default_buckets
+from src.sucess_probability import p_g
 
 
 def calculate_my_likelihood(d_g, n_g, p_g, prob_dens_func, w_g, gamma_g):
@@ -171,3 +173,33 @@ def ml_parameter_estimation(d_g, n_g, p_g, w_initial, gamma_initial, bounds):
                       options={
                           'disp': True})
     return result
+
+
+def parameter_estimation(default_list, num_of_obligors_over_time, factor_loading_init, gamma_list_init):
+    initial_guess = gamma_list_init + factor_loading_init
+
+    num_of_gamma = len(gamma_list_init)
+    num_of_factor_loading = len(factor_loading_init)
+    bounds = num_of_gamma * [(-5, 5)] + num_of_factor_loading * [(-1, 1)]
+    # Optimization
+    objective_function = lambda params: -np.log(calculate_my_likelihood_arr(
+        default_list, num_of_obligors_over_time, p_g, norm.pdf, params[num_of_gamma], params[0:num_of_gamma]
+    ))
+
+    result = minimize(objective_function,
+                      initial_guess,
+                      method="Nelder-Mead",
+                      bounds=bounds,
+                      options={
+                          'disp': False})
+
+    return result
+
+
+def gen_data_and_mle(time_points, num_of_obligors_list, factor_loading_list, gamma_list, factor_loading_init, gamma_list_init):
+    d_g_list = generate_default_buckets(factor_loading_list, num_of_obligors_list, gamma_list, time_points)
+    n_g_list = [num_of_obligors_list[i] * time_points for i in range(len(num_of_obligors_list))]
+
+    ml_params = parameter_estimation(d_g_list, n_g_list, factor_loading_init, gamma_list_init)
+
+    return d_g_list, n_g_list, ml_params.x
