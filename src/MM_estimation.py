@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 from scipy import stats
+from scipy.stats import norm
 
 
 def calc_variance_of_default_rate(w_factor_loading, pd_average):
@@ -28,7 +29,7 @@ def calc_variance_of_default_rate(w_factor_loading, pd_average):
     return result
 
 
-def estimate_w_factor_loading(historical_pd, num_of_total_grades, initial_guess):
+def estimate_w_factor_loading(historical_pd, num_of_total_grades, initial_guess=0.27):
     """
     Estimate w_factor_loading using the method of moments
     :param historical_pd: pd series, list of historical default rates
@@ -48,7 +49,7 @@ def estimate_w_factor_loading(historical_pd, num_of_total_grades, initial_guess)
                 1 - expected_value_of_reciprocal_n_g)
 
     # Define bounds for w_factor_loading
-    bounds = [(-5, 5)]
+    bounds = [(-0.9999, 0.9999)]
 
     # Define object function
     object_function = lambda w: abs(calc_variance_of_default_rate(w, pd_average) - variance_of_p_d)
@@ -60,3 +61,18 @@ def estimate_w_factor_loading(historical_pd, num_of_total_grades, initial_guess)
     w_factor_loading_found = result.x[0]
 
     return w_factor_loading_found, pd_average
+
+
+def MM_estimation(default_series, num_of_obligors_series, w_init=0.27):
+    """
+    Estimate w_g and gamma_g using the MM estimation method.
+
+    Returns:
+        tuple: Estimated w_g and gamma_g.
+    """
+    historical_pd = default_series / num_of_obligors_series
+
+    # Estimate w_factor_loading
+    w_g, pd_average = estimate_w_factor_loading(historical_pd, num_of_obligors_series, w_init)
+
+    return w_g, norm.ppf(pd_average)
