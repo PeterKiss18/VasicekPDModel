@@ -1,7 +1,9 @@
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize
 from scipy import stats
 from scipy.stats import norm
+from src.data_generator import generate_default_time_series
 
 
 def calc_variance_of_default_rate(w_factor_loading, pd_average):
@@ -76,3 +78,26 @@ def MM_estimation(default_series, num_of_obligors_series, w_init=0.27):
     w_g, pd_average = estimate_w_factor_loading(historical_pd, num_of_obligors_series, w_init)
 
     return w_g, norm.ppf(pd_average)
+
+
+def gen_data_and_mle(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
+    """
+    Generate data and estimate parameters using the maximum likelihood estimation method.
+    :param time_points: int, number of time points
+    :param num_of_obligors_list: list, number of obligors for each grade
+    :param factor_loading_list: list, factor loading for each grade
+    :param gamma_list: list, gamma for each grade
+    :param sims: int, number of simulations
+    """
+    grade_num = len(gamma_list)
+
+    params_df = pd.DataFrame()
+
+    for sim in range(sims):
+        defaults_df = generate_default_time_series(factor_loading_list, num_of_obligors_list, gamma_list, time_points)
+        for i in range(grade_num):
+            n_g_list = np.array([num_of_obligors_list[i]] * time_points)
+            w_param, pd_param = MM_estimation(defaults_df["d_g_" + str(i)], n_g_list)
+            params_df.loc[sim, "w_" + str(i)] = w_param
+
+    return params_df
