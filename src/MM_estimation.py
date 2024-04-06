@@ -80,9 +80,9 @@ def MM_estimation(default_series, num_of_obligors_series, w_init=0.27):
     return w_g, norm.ppf(pd_average)
 
 
-def gen_data_and_mle(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
+def gen_data_and_mm(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
     """
-    Generate data and estimate parameters using the maximum likelihood estimation method.
+    Generate data and estimate parameters using the method of moments estimation method.
     :param time_points: int, number of time points
     :param num_of_obligors_list: list, number of obligors for each grade
     :param factor_loading_list: list, factor loading for each grade
