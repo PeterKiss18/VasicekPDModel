@@ -183,7 +183,8 @@ def parameter_estimation(default_list, num_of_obligors_over_time, factor_loading
     bounds = num_of_gamma * [(-5, 5)] + num_of_factor_loading * [(-1, 1)]
     # Optimization
     objective_function = lambda params: -np.log(calculate_my_likelihood_arr(
-        default_list, num_of_obligors_over_time, p_g, norm.pdf, params[num_of_gamma], params[0:num_of_gamma]
+        default_list, num_of_obligors_over_time, p_g, norm.pdf,
+        params[num_of_gamma:num_of_gamma+num_of_factor_loading], params[0:num_of_gamma]
     ))
 
     result = minimize(objective_function,
@@ -203,3 +204,33 @@ def gen_data_and_mle(time_points, num_of_obligors_list, factor_loading_list, gam
     ml_params = parameter_estimation(d_g_list, n_g_list, factor_loading_init, gamma_list_init)
 
     return d_g_list, n_g_list, ml_params.x
+
+
+def calculate_variable_changed_likelihood_arr(d_g_arr, n_g_arr, p_g, prob_dens_func, a, b):
+    integrand = lambda x: np.prod(binom.pmf(d_g_arr, n_g_arr, norm.cdf(a*x+b))) * prob_dens_func(x)
+
+    result, _ = quad(integrand, -3, 3)
+
+    return result
+
+
+def ml_estimation_linear(default_list, num_of_obligors_over_time, a_init, b_init):
+    initial_guess = a_init + b_init
+
+    num_of_a = len(a_init)
+    num_of_b = len(b_init)
+    bounds = num_of_a * [(-5, 5)] + num_of_b * [(-5, 5)]
+
+    # Optimization
+    objective_function = lambda params: -np.log(calculate_variable_changed_likelihood_arr(
+        default_list, num_of_obligors_over_time, p_g, norm.pdf, params[num_of_b:num_of_b+num_of_a], params[0:num_of_b]
+    ))
+
+    result = minimize(objective_function,
+                      initial_guess,
+                      method="Nelder-Mead",
+                      bounds=bounds,
+                      options={
+                          'disp': False})
+
+    return result
