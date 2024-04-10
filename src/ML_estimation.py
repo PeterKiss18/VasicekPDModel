@@ -5,6 +5,7 @@ from scipy.integrate import quad
 from scipy.optimize import minimize
 from src.data_generator import generate_default_buckets
 from src.sucess_probability import p_g
+from src.variable_change import w_calc_func, gamma_calc_func, a_calc_func, b_calc_func
 
 
 def calculate_my_likelihood(d_g, n_g, p_g, prob_dens_func, w_g, gamma_g):
@@ -70,7 +71,7 @@ def calculate_my_likelihood_arr(d_g_arr, n_g_arr, p_g, prob_dens_func, w_g_arr, 
 
     integrand = lambda x: np.prod(binom.pmf(d_g_arr, n_g_arr, p_g(x, w_g_arr, gamma_g_arr))) * prob_dens_func(x)
 
-    result, _ = quad(integrand, -3, 3)
+    result, _ = quad(integrand, -3, 3, epsabs=1.49e-28)
 
     return result
 
@@ -209,21 +210,20 @@ def gen_data_and_mle(time_points, num_of_obligors_list, factor_loading_list, gam
 def calculate_variable_changed_likelihood_arr(d_g_arr, n_g_arr, p_g, prob_dens_func, a, b):
     integrand = lambda x: np.prod(binom.pmf(d_g_arr, n_g_arr, norm.cdf(a*x+b))) * prob_dens_func(x)
 
-    result, _ = quad(integrand, -3, 3)
+    result, _ = quad(integrand, -3, 3, epsabs=1.49e-28)
 
     return result
 
 
 def ml_estimation_linear(default_list, num_of_obligors_over_time, a_init, b_init):
-    initial_guess = a_init + b_init
+    initial_guess = np.concatenate((a_init, b_init))
 
     num_of_a = len(a_init)
-    num_of_b = len(b_init)
-    bounds = num_of_a * [(-5, 5)] + num_of_b * [(-5, 5)]
+    bounds = [(-10, 10)] * len(initial_guess)
 
     # Optimization
     objective_function = lambda params: -np.log(calculate_variable_changed_likelihood_arr(
-        default_list, num_of_obligors_over_time, p_g, norm.pdf, params[num_of_b:num_of_b+num_of_a], params[0:num_of_b]
+        default_list, num_of_obligors_over_time, p_g, norm.pdf, params[:num_of_a], params[num_of_a:len(initial_guess)]
     ))
 
     result = minimize(objective_function,
@@ -234,3 +234,67 @@ def ml_estimation_linear(default_list, num_of_obligors_over_time, a_init, b_init
                           'disp': False})
 
     return result
+
+
+def ml_estimation_linear_with_w_and_g(
+        default_list, num_of_obligors_over_time, factor_loading_init, gamma_list_init, fixed_w=False, fixed_g=False):
+    if len(factor_loading_init) == 1:
+        factor_loading_init = np.full_like(gamma_list_init, factor_loading_init[0])
+    elif len(gamma_list_init) == 1:
+        gamma_list_init = gamma_list_init * len(factor_loading_init)
+
+    a_init = np.array(a_calc_func(np.array(factor_loading_init), np.array(gamma_list_init)))
+    b_init = np.array(b_calc_func(np.array(factor_loading_init), np.array(gamma_list_init)))
+
+    initial_guess = np.concatenate((a_init, b_init))
+
+    num_of_a = len(a_init)
+    bounds = [(-10, 10)] * len(initial_guess)
+
+    # Optimization
+    if not fixed_w and not fixed_g:
+        objective_function = lambda params: -np.log(calculate_variable_changed_likelihood_arr(
+            default_list, num_of_obligors_over_time, p_g, norm.pdf, params[:num_of_a], params[num_of_a:len(initial_guess)]
+        ))
+
+        result = minimize(objective_function,
+                          initial_guess,
+                          method="Nelder-Mead",
+                          bounds=bounds,
+                          options={
+                              'disp': False})
+
+        factor_loading_result = np.array(w_calc_func(np.array(result.x[:num_of_a]), np.array(result.x[num_of_a:])))
+        gamma_result = np.array(gamma_calc_func(np.array(result.x[:num_of_a]), np.array(result.x[num_of_a:])))
+
+    elif fixed_w:
+        objective_function = lambda params: -np.log(calculate_variable_changed_likelihood_arr(
+            default_list, num_of_obligors_over_time, p_g, norm.pdf, a_init, params
+        ))
+
+        result = minimize(objective_function,
+                          b_init,
+                          method="Nelder-Mead",
+                          bounds=bounds[num_of_a:],
+                          options={
+                              'disp': False})
+
+        factor_loading_result = np.array(w_calc_func(a_init, result.x))
+        gamma_result = np.array(gamma_calc_func(a_init, result.x))
+
+    elif fixed_g:
+        objective_function = lambda params: -np.log(calculate_variable_changed_likelihood_arr(
+            default_list, num_of_obligors_over_time, p_g, norm.pdf, params, b_init
+        ))
+
+        result = minimize(objective_function,
+                          a_init,
+                          method="Nelder-Mead",
+                          bounds=bounds[:num_of_a],
+                          options={
+                              'disp': False})
+
+        factor_loading_result = np.array(w_calc_func(result.x, b_init))
+        gamma_result = np.array(gamma_calc_func(result.x, b_init))
+
+    return factor_loading_result, gamma_result, result

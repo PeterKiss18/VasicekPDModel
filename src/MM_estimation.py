@@ -21,7 +21,7 @@ def calc_variance_of_default_rate(w_factor_loading, pd_average):
 
     # Bivariate normal cdf parameters
     mean = [0, 0]
-    cov_matrix = [[1, w_factor_loading], [w_factor_loading, 1]]
+    cov_matrix = [[1, w_factor_loading**2], [w_factor_loading**2, 1]]
 
     # Calculate BIVNOR value
     bivnor_value = stats.multivariate_normal.cdf([cut_off_value, cut_off_value], mean=mean, cov=cov_matrix)

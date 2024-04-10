@@ -9,3 +9,4 @@ from src.MM_estimation import gen_data_and_mm
 from src.MM_estimation import gen_data_and_mm
 from src.monte_carlo import monte_carlo_MLE
 from src.data_generator import generate_default_time_series
+from src.variable_change import a_calc_func, b_calc_func, gamma_calc_func, w_calc_func
