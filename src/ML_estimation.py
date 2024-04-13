@@ -238,10 +238,10 @@ def ml_estimation_linear(default_list, num_of_obligors_over_time, a_init, b_init
 
 def ml_estimation_linear_with_w_and_g(
         default_list, num_of_obligors_over_time, factor_loading_init, gamma_list_init, fixed_w=False, fixed_g=False):
-    if len(factor_loading_init) == 1:
-        factor_loading_init = np.full_like(gamma_list_init, factor_loading_init[0])
-    elif len(gamma_list_init) == 1:
-        gamma_list_init = gamma_list_init * len(factor_loading_init)
+    # if len(factor_loading_init) == 1:
+    #     factor_loading_init = np.full_like(gamma_list_init, factor_loading_init[0])
+    # elif len(gamma_list_init) == 1:
+    #     gamma_list_init = gamma_list_init * len(factor_loading_init)
 
     a_init = np.array(a_calc_func(np.array(factor_loading_init), np.array(gamma_list_init)))
     b_init = np.array(b_calc_func(np.array(factor_loading_init), np.array(gamma_list_init)))
