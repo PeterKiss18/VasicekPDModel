@@ -6,6 +6,7 @@ from scipy.optimize import minimize
 from src.data_generator import generate_default_buckets
 from src.sucess_probability import p_g
 from src.variable_change import w_calc_func, gamma_calc_func, a_calc_func, b_calc_func
+from scipy.integrate import cumtrapz
 
 
 def calculate_my_likelihood(d_g, n_g, p_g, prob_dens_func, w_g, gamma_g):
@@ -72,6 +73,34 @@ def calculate_my_likelihood_arr(d_g_arr, n_g_arr, p_g, prob_dens_func, w_g_arr, 
     integrand = lambda x: np.prod(binom.pmf(d_g_arr, n_g_arr, p_g(x, w_g_arr, gamma_g_arr))) * prob_dens_func(x)
 
     result, _ = quad(integrand, -3, 3, epsabs=1.49e-28)
+
+    return result
+
+
+def calculate_trapz_likelihood_arr(d_g_arr, n_g_arr, p_g, prob_dens_func, w_g_arr, gamma_g_arr):
+    """
+    Numerically calculates the value of L(d_g_arr) for multiple grades based on the given formula.
+
+    Parameters:
+        d_g_arr (numpy.array(int)): Values of d_g's by grades
+        n_g_arr (numpy.array(int)): Values of n_g's by grades
+        p_g (callable): The p_g function representing the probability density function.
+        prob_dens_func (callable): The pdf_g function representing the probability density function.
+        w_g_arr (numpy.array(float)): Parameter 'w_g's by grades
+        gamma_g_arr (numpy.array(float)): Parameter 'gamma_g's by grades.
+
+    Returns:
+        float: Numerical approximation of the integral.
+    """
+
+    # Generate a range of values for y from 0 to 1
+    y_values = np.linspace(0, 1, num=1000)
+
+    # Calculate the integrand at each value of y
+    integrand_values = np.prod(binom.pmf(d_g_arr, n_g_arr, p_g(norm.ppf(y_values), w_g_arr, gamma_g_arr)), axis=1)
+
+    # Integrate the integrand using cumtrapz
+    result = cumtrapz(integrand_values, y_values)[-1]
 
     return result
 
