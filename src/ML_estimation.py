@@ -7,6 +7,7 @@ from src.data_generator import generate_default_buckets
 from src.sucess_probability import p_g
 from src.variable_change import w_calc_func, gamma_calc_func, a_calc_func, b_calc_func
 from scipy.integrate import cumtrapz
+from src.data_generator import generate_default_time_series
 
 
 def calculate_my_likelihood(d_g, n_g, p_g, prob_dens_func, w_g, gamma_g):
@@ -450,3 +451,26 @@ def mle_trapz_g_and_w(
         gamma_result = np.array(gamma_calc_func(result.x, b_init))
 
     return factor_loading_result, gamma_result, result
+
+def gen_data_and_mle_new(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
+    """
+    Generate data and estimate parameters using the method of moments estimation method.
+    :param time_points: int, number of time points
+    :param num_of_obligors_list: list, number of obligors for each grade
+    :param factor_loading_list: list, factor loading for each grade
+    :param gamma_list: list, gamma for each grade
+    :param sims: int, number of simulations
+    """
+    grade_num = len(gamma_list)
+
+    params_df = pd.DataFrame()
+
+    for sim in range(sims):
+        defaults_df = generate_default_time_series(factor_loading_list, num_of_obligors_list, gamma_list, time_points)
+        num_of_obligors_df = np.full_like(defaults_df, num_of_obligors_list[0])
+        w_param, pd_param, _ = mle_trapz_g_and_w(defaults_df.values, num_of_obligors_df, factor_loading_list, gamma_list)
+        for i in range(grade_num):
+            params_df.loc[sim, "w_" + str(i)] = w_param[i]
+            params_df.loc[sim, "gamma_" + str(i)] = pd_param[i]
+
+    return params_df
