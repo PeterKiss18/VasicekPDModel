@@ -452,7 +452,7 @@ def mle_trapz_g_and_w(
 
     return factor_loading_result, gamma_result, result
 
-def gen_data_and_mle_new(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
+def gen_data_and_ml_estimation(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
     """
     Generate data and estimate parameters using the method of moments estimation method.
     :param time_points: int, number of time points
@@ -461,16 +461,17 @@ def gen_data_and_mle_new(time_points, num_of_obligors_list, factor_loading_list,
     :param gamma_list: list, gamma for each grade
     :param sims: int, number of simulations
     """
-    grade_num = len(gamma_list)
-
     params_df = pd.DataFrame()
 
     for sim in range(sims):
         defaults_df = generate_default_time_series(factor_loading_list, num_of_obligors_list, gamma_list, time_points)
-        num_of_obligors_df = np.full_like(defaults_df, num_of_obligors_list[0])
+        num_of_obligors_df = np.array([num_of_obligors_list] * len(defaults_df))
         w_param, pd_param, _ = mle_trapz_g_and_w(defaults_df.values, num_of_obligors_df, factor_loading_list, gamma_list)
-        for i in range(grade_num):
+
+        for i in range(len(factor_loading_list)):
             params_df.loc[sim, "w_" + str(i)] = w_param[i]
+
+        for i in range(len(gamma_list)):
             params_df.loc[sim, "gamma_" + str(i)] = pd_param[i]
 
     return params_df

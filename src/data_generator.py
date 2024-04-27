@@ -31,6 +31,9 @@ def generate_default_buckets(factor_loading_list, num_of_obligors_list, gamma_li
 
 
 def generate_default_time_series(factor_loading_list, num_of_obligors_list, gamma_list, time_points=160):
+    # if factor_loading_list's length is 1, then make it a list of the same length as num_of_obligors_list
+    if len(factor_loading_list) == 1:
+        factor_loading_list = [factor_loading_list[0]] * len(num_of_obligors_list)
     x = np.random.normal(0, 1, time_points)
     defaults_df = pd.DataFrame()
 
