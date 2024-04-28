@@ -100,7 +100,8 @@ def gen_data_and_mm(time_points, num_of_obligors_list, factor_loading_list, gamm
         defaults_df = generate_default_time_series(factor_loading_list, num_of_obligors_list, gamma_list, time_points)
         for i in range(grade_num):
             n_g_list = np.array([num_of_obligors_list[i]] * time_points)
-            w_param, pd_param = MM_estimation(defaults_df["d_g_" + str(i)], n_g_list)
+            w_param, gamma_param = MM_estimation(defaults_df["d_g_" + str(i)], n_g_list)
+            params_df.loc[sim, "gamma_" + str(i)] = gamma_param
             params_df.loc[sim, "w_" + str(i)] = w_param
 
     return params_df
