@@ -454,7 +454,7 @@ def mle_trapz_g_and_w(
 
 def gen_data_and_ml_estimation(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
     """
-    Generate data and estimate parameters using the method of moments estimation method.
+    Generate data and maximum likelihood estimation.
     :param time_points: int, number of time points
     :param num_of_obligors_list: list, number of obligors for each grade
     :param factor_loading_list: list, factor loading for each grade
@@ -473,5 +473,33 @@ def gen_data_and_ml_estimation(time_points, num_of_obligors_list, factor_loading
 
         for i in range(len(gamma_list)):
             params_df.loc[sim, "gamma_" + str(i)] = pd_param[i]
+
+    return params_df
+
+
+def gen_data_and_mle1(time_points, num_of_obligors_list, factor_loading_list, gamma_list, sims=100):
+    """
+    Generate data and estimate parameters using the MLE1 method, which is MLE by marginals.
+    :param time_points: int, number of time points
+    :param num_of_obligors_list: list, number of obligors for each grade
+    :param factor_loading_list: list, factor loading for each grade
+    :param gamma_list: list, gamma for each grade
+    :param sims: int, number of simulations
+    """
+    params_df = pd.DataFrame()
+
+    for sim in range(sims):
+        defaults_df = generate_default_time_series(factor_loading_list, num_of_obligors_list, gamma_list, time_points)
+
+        for col in range(defaults_df.shape[1]):
+            defaults_col = defaults_df.iloc[:, col]
+            num_of_obligors_col = np.array([num_of_obligors_list[col]] * len(defaults_col))
+            w_param, pd_param, _ = mle_trapz_g_and_w(defaults_col.values,
+                                                     num_of_obligors_col,
+                                                     [factor_loading_list[col]],
+                                                     [gamma_list[col]])
+
+            params_df.loc[sim, f"w_{col}"] = w_param[0]
+            params_df.loc[sim, f"gamma_{col}"] = pd_param[0]
 
     return params_df
